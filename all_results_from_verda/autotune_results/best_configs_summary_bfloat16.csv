@@ -1,0 +1,9 @@
+Size,Best Config ID,Config Name,TFLOPS,Speedup vs PyTorch
+128x128x128,160,128x128x64_DataParallel_RasterN_Swz1,0.40,1.58x
+256x256x256,86,128x128x64_Heuristic_RasterH_Swz4,2.98,1.48x
+512x512x512,161,128x128x64_DataParallel_RasterN_Swz2,20.51,1.28x
+1024x1024x1024,157,128x128x64_DataParallel_RasterH_Swz2,126.14,0.99x
+2048x2048x2048,10,128x256x64_Heuristic_RasterM_Swz4,497.56,1.01x
+4096x4096x4096,52,128x256x64_SplitK_RasterN_Swz8_Spl1,654.97,0.88x
+6144x6144x6144,40,128x256x64_SplitK_RasterN_Swz1_Spl1,672.66,0.96x
+8192x8192x8192,3,128x256x64_Heuristic_RasterH_Swz8,599.33,0.90x

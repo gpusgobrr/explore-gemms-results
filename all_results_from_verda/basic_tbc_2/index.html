@@ -1,0 +1,471 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUDA GEMM Benchmark Results</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 3px solid #e9ecef;
+        }
+
+        .info-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-card p {
+            color: #333;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            padding: 30px;
+        }
+
+        .chart-container iframe {
+            width: 100%;
+            height: 950px;
+            border: none;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px;
+            max-width: calc(100% - 60px);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .kernel-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-pytorch {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-pytorch-jit {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-naive {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .badge-coalesced {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-shared {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-blocktiling {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .badge-blocktiling2d {
+            background: #e0f7fa;
+            color: #006064;
+        }
+
+        .badge-vectorize {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+
+        .badge-warptiling {
+            background: #fff9c4;
+            color: #f57f17;
+        }
+
+        .badge-tensorcore {
+            background: #e0f2f1;
+            color: #00695c;
+        }
+
+        .badge-cutlass {
+            background: #ffe0b2;
+            color: #e65100;
+        }
+
+        .speedup {
+            font-weight: bold;
+        }
+
+        .speedup.faster {
+            color: #2e7d32;
+        }
+
+        .speedup.slower {
+            color: #c62828;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 CUDA GEMM Kernel Benchmarks (BFP16)</h1>
+            <p class="subtitle">Performance Comparison: PyTorch vs Custom CUDA Kernels</p>
+        </header>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <h3>🖥️ GPU</h3>
+                <p>NVIDIA H100 80GB HBM3</p>
+            </div>
+            <div class="info-card">
+                <h3>📊 Data Type</h3>
+                <p>BFP16</p>
+            </div>
+            <div class="info-card">
+                <h3>⏰ Timestamp</h3>
+                <p>2025-12-08 03:08:38</p>
+            </div>
+            <div class="info-card">
+                <h3>🔢 Test Sizes</h3>
+                <p>12 configurations</p>
+            </div>
+            <div class="info-card">
+                <h3>⚡ Kernels Tested</h3>
+                <p>2 kernels</p>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <iframe src="benchmark_results.html"></iframe>
+        </div>
+
+        <h2 style="padding: 30px 30px 0 30px; color: #333;">📊 Detailed Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Matrix Size</th>
+                    <th>Kernel</th>
+                    <th>Avg Time (ms)</th>
+                    <th>TFLOP16s</th>
+                    <th>Bandwidth (GB/s)</th>
+                    <th>Speedup</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td><strong>64×64</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0190</td>
+                    <td><strong>0.03</strong></td>
+                    <td>1.30</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>64×64</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0221</td>
+                    <td><strong>0.02</strong></td>
+                    <td>1.11</td>
+                    <td><span class="speedup slower">0.86×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>96×96</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0180</td>
+                    <td><strong>0.10</strong></td>
+                    <td>3.07</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>96×96</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0216</td>
+                    <td><strong>0.08</strong></td>
+                    <td>2.56</td>
+                    <td><span class="speedup slower">0.83×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>128×128</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0188</td>
+                    <td><strong>0.22</strong></td>
+                    <td>5.23</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>128×128</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0213</td>
+                    <td><strong>0.20</strong></td>
+                    <td>4.61</td>
+                    <td><span class="speedup slower">0.88×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>256×256</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0183</td>
+                    <td><strong>1.84</strong></td>
+                    <td>21.54</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>256×256</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0214</td>
+                    <td><strong>1.57</strong></td>
+                    <td>18.37</td>
+                    <td><span class="speedup slower">0.85×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>512×512</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0180</td>
+                    <td><strong>14.95</strong></td>
+                    <td>87.61</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>512×512</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0217</td>
+                    <td><strong>12.39</strong></td>
+                    <td>72.60</td>
+                    <td><span class="speedup slower">0.83×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>768×768</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0184</td>
+                    <td><strong>49.11</strong></td>
+                    <td>191.83</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>768×768</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0225</td>
+                    <td><strong>40.27</strong></td>
+                    <td>157.31</td>
+                    <td><span class="speedup slower">0.82×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>1024×1024</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0188</td>
+                    <td><strong>114.23</strong></td>
+                    <td>334.65</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>1024×1024</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0255</td>
+                    <td><strong>84.20</strong></td>
+                    <td>246.69</td>
+                    <td><span class="speedup slower">0.74×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>1536×1536</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0236</td>
+                    <td><strong>306.90</strong></td>
+                    <td>599.41</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>1536×1536</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0505</td>
+                    <td><strong>143.49</strong></td>
+                    <td>280.25</td>
+                    <td><span class="speedup slower">0.47×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>2048×2048</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0358</td>
+                    <td><strong>479.99</strong></td>
+                    <td>703.11</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>2048×2048</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.0654</td>
+                    <td><strong>262.72</strong></td>
+                    <td>384.85</td>
+                    <td><span class="speedup slower">0.55×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>3072×3072</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.0858</td>
+                    <td><strong>676.10</strong></td>
+                    <td>660.25</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>3072×3072</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.1949</td>
+                    <td><strong>297.48</strong></td>
+                    <td>290.51</td>
+                    <td><span class="speedup slower">0.44×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>4096×4096</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>0.1800</td>
+                    <td><strong>763.48</strong></td>
+                    <td>559.19</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>4096×4096</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>0.3885</td>
+                    <td><strong>353.77</strong></td>
+                    <td>259.11</td>
+                    <td><span class="speedup slower">0.46×</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>8192×8192</strong></td>
+                    <td><span class="kernel-badge badge-pytorch">PyTorch</span></td>
+                    <td>1.5674</td>
+                    <td><strong>701.51</strong></td>
+                    <td>256.90</td>
+                    <td><span class="speedup ">baseline</span></td>
+                </tr>
+
+                <tr>
+                    <td><strong>8192×8192</strong></td>
+                    <td><span class="kernel-badge badge-cutlass">CUTLASS Hopper (BF16)</span></td>
+                    <td>2.8165</td>
+                    <td><strong>390.38</strong></td>
+                    <td>142.96</td>
+                    <td><span class="speedup slower">0.56×</span></td>
+                </tr>
+
+            </tbody>
+        </table>
+
+        <footer>
+            <p>Generated by CUDA GEMM Benchmark Suite • Powered by PyTorch & Plotly</p>
+        </footer>
+    </div>
+</body>
+</html>
